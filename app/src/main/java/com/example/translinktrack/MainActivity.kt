@@ -1,3 +1,5 @@
+// © Ion Basha 2023
+
 package com.example.translinktrack
 
 import android.content.Context
@@ -6,6 +8,7 @@ import android.graphics.Canvas
 import android.graphics.drawable.Drawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -20,6 +23,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import okhttp3.Call
 import okhttp3.Callback
@@ -38,9 +42,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private val client = OkHttpClient()
 
-    private var mapHasMarkers = false
+    private var markerList = ArrayList<Marker>()
 
-    private val parser = XmlPullParserFactory.newInstance().newPullParser()
+    private lateinit var btnFind: Button
+
+    private lateinit var etSearch: EditText
+
+    private var prevInput = ""
+
+    var busList = ArrayList<Bus>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,15 +63,11 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mapFragment.getMapAsync(this)
 
         // btnFind and etSearch used together to search for live bus data
-        val btnFind = findViewById<Button>(R.id.btnFind)
+        btnFind = findViewById<Button>(R.id.btnFind)
 
-        val etSearch = findViewById<EditText>(R.id.etSearch)
+        etSearch = findViewById<EditText>(R.id.etSearch)
 
         btnFind.setOnClickListener {
-
-            if(mapHasMarkers) { removeMarkers() }
-            else { mapHasMarkers = true }
-
             // LINES 63 TO 73 ARE COURTESY OF GEEKSFORGEEKS:
             // https://www.geeksforgeeks.org/how-to-close-or-hide-android-soft-keyboard-with-kotlin/ ***
 
@@ -82,9 +88,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             // (stored in "client" val
             var userInput = etSearch.text.toString()
 
-            // Lines 45 and 46 ensure that a 3 digit value is always used as
-            // when making the HTTPS request (i.e. if the user enters 33 instead of
-            // 033, the necessary "0" will be added to the front of the input)
+            // In case the user enters 33 instead of
+            // 033 for example, the necessary "0" will be added to the front of the input)
             if(userInput.length != 3 && userInput.get(0) != 'R') { userInput = "0" + userInput }
 
             getBusData(etSearch, userInput) // send GET request through OkHttp client
@@ -114,6 +119,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun parseXML(xmlFile: Response) {
+        var parser = XmlPullParserFactory.newInstance().newPullParser()
         var event = parser.eventType
         parser.setInput(xmlFile.body?.byteStream(), "UTF-8")
 
@@ -124,7 +130,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         var directionIsNext = false
 
         // Store longitude and latitude values which will be used to highlight buses on map fragment
-        var busList = listOf<Bus>()
 
         // Dummy object
         var bus = Bus(0.0, 0.0, null, null)
@@ -155,6 +160,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 // value we want to parse
                 busList += bus
                 bus = Bus(0.0, 0.0, null, null)
+                Log.d("issue", "${busList.size}")
             }
             else if(event == XmlPullParser.TEXT && destIsNext) {
                 bus.dest = parser.text
@@ -166,19 +172,30 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             event = parser.next()
         }
+        Log.d("issue", "${busList.size}")
 
         // Update map with bus locations
-        this@MainActivity.runOnUiThread(object: Runnable {
+        runOnUiThread(object: Runnable {
             override fun run() {
+                Log.d("issue", "${busList.size}")
+                // Clear map prev map markers before adding new ones
+                if(markerList.isNotEmpty()) {
+                    for(m in markerList) { m.remove() }
+                }
+                mMap.clear()
+
                 for(i in busList.indices) {
                     var coordinate = LatLng(busList[i].lat, busList[i].long)
-                    mMap.addMarker(MarkerOptions().position(coordinate)
+                    var markerOptions = MarkerOptions()
+                        .position(coordinate)
                         .icon(BitmapFromVector(applicationContext, R.drawable.bus_marker))
-                        .title("${busList[i].dest}")
-                        .snippet("${busList[i].direction}"))
+                        .title(busList[i].dest)
+                        .snippet(busList[i].direction)
+                    var marker: Marker = mMap.addMarker(markerOptions)!!
+                    markerList += marker
                 }
+                busList.clear()
             }
-
         })
 
     }
