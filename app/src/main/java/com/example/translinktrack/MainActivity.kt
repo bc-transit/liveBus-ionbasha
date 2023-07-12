@@ -52,6 +52,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     var busList = ArrayList<Bus>()
 
+    private val vancouver = LatLng(49.2829, -123.1207)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Thread.sleep(1000)
@@ -194,10 +196,21 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     var marker: Marker = mMap.addMarker(markerOptions)!!
                     markerList += marker
                 }
+
+                if(!prevIsEqual(vancouver)) {
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(vancouver, 11.2F))
+                }
+
                 busList.clear()
+                prevInput = etSearch.text.toString()
             }
         })
 
+    }
+
+    // If searching for new bus, readjust map zoom level: else leave as is
+    private fun prevIsEqual(location: LatLng) : Boolean {
+        return prevInput == etSearch.text.toString()
     }
 
     // *** COURTESY OF GEEKSFORGEEKS:
@@ -232,7 +245,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     // When map ready, pan to Vancouver to show requested buses
     override fun onMapReady(p0: GoogleMap) {
         mMap = p0
-        val vancouver = LatLng(49.2829, -123.1207)
+
         mMap.moveCamera(CameraUpdateFactory.newLatLng(vancouver))
         mMap.setMinZoomPreference(11.2F)
     }

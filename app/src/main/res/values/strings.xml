@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TransLinkTrack</string>
+    <string name="app_name">liveBus</string>
     <string name="googlemaps_api_key">AIzaSyATg8ljbx88-13_rdFnjTvywENDEAyOVzQ</string>
     <string name="translink_api_key">cN3DIyLQj6vKvcIv4s1b</string>
 </resources>
