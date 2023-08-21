@@ -38,26 +38,16 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
 
-    private val translinkAPIKey = "cN3DIyLQj6vKvcIv4s1b"
-
-    private val client = OkHttpClient()
-
-    private var markerList = ArrayList<Marker>()
-
     private lateinit var btnFind: Button
 
     private lateinit var etSearch: EditText
 
     private var prevInput = ""
 
-    var busList = ArrayList<Bus>()
-
     private val vancouver = LatLng(49.2829, -123.1207)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Thread.sleep(1000)
-        installSplashScreen() // Splashscreen API
         setContentView(R.layout.activity_main)
 
         // Google Maps map fragment setup
@@ -100,6 +90,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun getBusData(et: TextView, input: String) {
         // Build request
+        val client = OkHttpClient()
+        val translinkAPIKey = "cN3DIyLQj6vKvcIv4s1b"
         var URL = "https://api.translink.ca/rttiapi/v1/buses?apikey="+translinkAPIKey+"&routeNo="+input
         var request = Request
             .Builder()
@@ -131,9 +123,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         var destIsNext = false
         var directionIsNext = false
 
-        // Store longitude and latitude values which will be used to highlight buses on map fragment
+        val busList = ArrayList<Bus>()
 
-        // Dummy object
         var bus = Bus(0.0, 0.0, null, null)
 
         // Loop through XML documents and pull lat/long values
@@ -158,8 +149,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             else if(event == XmlPullParser.TEXT && longIsNext) {
                 bus.long = parser.text.toDouble()
                 longIsNext = false
-                // Add Bus object to list since the Longitude is the last
-                // value we want to parse
+                // Add Bus object to list as Longitude is the last
+                // value to parse
                 busList += bus
                 bus = Bus(0.0, 0.0, null, null)
                 Log.d("issue", "${busList.size}")
@@ -174,18 +165,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             event = parser.next()
         }
-        Log.d("issue", "${busList.size}")
 
         // Update map with bus locations
         runOnUiThread(object: Runnable {
             override fun run() {
-                Log.d("issue", "${busList.size}")
                 // Clear map prev map markers before adding new ones
-                if(markerList.isNotEmpty()) {
-                    for(m in markerList) { m.remove() }
-                }
                 mMap.clear()
-
                 for(i in busList.indices) {
                     var coordinate = LatLng(busList[i].lat, busList[i].long)
                     var markerOptions = MarkerOptions()
@@ -194,7 +179,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         .title(busList[i].dest)
                         .snippet(busList[i].direction)
                     var marker: Marker = mMap.addMarker(markerOptions)!!
-                    markerList += marker
                 }
 
                 if(!prevIsEqual(vancouver)) {
