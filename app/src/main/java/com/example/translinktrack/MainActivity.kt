@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun getBusData(et: TextView, input: String) {
         // Build request
         val client = OkHttpClient()
-        val translinkAPIKey = "cN3DIyLQj6vKvcIv4s1b"
+        val translinkAPIKey = "translink_api_key"
         var URL = "https://api.translink.ca/rttiapi/v1/buses?apikey="+translinkAPIKey+"&routeNo="+input
         var request = Request
             .Builder()
