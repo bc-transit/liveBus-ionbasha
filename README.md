@@ -7,3 +7,12 @@ Used Google Maps SDK to display map, and used TransLink REST API to gather bus d
 (i.e. bus longitude/latitude, direction, final destination.)
 
 
+------
+
+# Link to the rttiapi code
+
+    $ grep -r rttiapi *
+    app/src/main/java/com/example/translinktrack/MainActivity.kt:\
+    var URL = "https://api.translink.ca/rttiapi/v1/buses?apikey="+translinkAPIKey+"&routeNo="+input
+
+
